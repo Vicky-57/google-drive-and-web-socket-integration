@@ -1,0 +1,145 @@
+# Google Integration & WebSocket Chat
+
+A comprehensive Django-based application featuring Google OAuth 2.0 authentication, Google Drive integration, and real-time chat functionality using WebSockets.
+
+## 🚀 Live Demo
+
+The application is deployed and can be accessed at: "(https://google-drive-websocket-integration.onrender.com/)"
+
+## 📋 Features
+
+This application implements the following features:
+
+### 1. Google Authentication
+- Complete OAuth 2.0 flow for Google authentication
+- Secure storage of authentication tokens
+- Session management for authenticated users
+
+### 2. Google Drive Integration
+- Browse files in Google Drive using Google Picker API
+- List all files from user's Google Drive
+- Download files directly from Google Drive
+- Upload files to user's Google Drive
+
+### 3. Real-time Chat (WebSocket)
+- WebSocket implementation for instant message delivery
+- Pre-configured user chat functionality
+- Persistent message history
+
+## 🔧 Technologies Used
+
+- **Backend**: Django
+- **Authentication**: Google OAuth 2.0
+- **File Management**: Google Drive API, Google Picker API
+- **Real-time Communication**: WebSockets (Django Channels)
+- **Database**: sqllite
+- **Deployment**: Render
+
+## 🛠️ Setup and Installation
+
+### Prerequisites
+- Python 3.8+
+- Django 3.2+
+- Google Cloud Platform account with OAuth 2.0 credentials
+
+### Local Development
+
+1. Clone the repository
+```bash
+git clone https://github.com/yourusername/your-repo-name.git
+cd your-repo-name
+```
+
+2. Create and activate a virtual environment
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+3. Install dependencies
+```bash
+pip install -r requirements.txt
+```
+
+4. Set up environment variables
+Create a `.env` file in the project root with the following variables:
+```
+SECRET_KEY=your_django_secret_key
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GOOGLE_REDIRECT_URI= "http://localhost:8000/google/callback/" #for local host change it for production
+GOOGLE_API_KEY=your_google_api_key
+GOOGLE_APP_ID=your_google_app_id
+
+
+```
+
+5. Run migrations
+```bash
+python manage.py migrate
+```
+
+6. Start the development server
+```bash
+python manage.py runserver
+```
+
+7. Access the application at http://localhost:8000
+
+## 🔌 API Endpoints
+
+### Google Authentication
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/google/login/` | GET | Initiates Google OAuth 2.0 flow |
+| `/google/callback/` | GET | Callback URL for Google OAuth 2.0 |
+| `/google/logout/` | GET | Logs out the user |
+
+### Google Drive Integration
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/google/files/` | GET | Lists files from user's Google Drive |
+| `/google/download/<file_id>/` | GET | Downloads a file from Google Drive |
+| `/google/upload/` | POST | Uploads a file to user's Google Drive |
+| `/google/picker/` | GET | Opens Google Picker to browse Drive |
+
+### WebSocket
+
+| Endpoint | Description |
+|----------|-------------|
+| `/ws/chat/<room_name>/` | WebSocket endpoint for chat functionality |
+
+## 📝 Testing with Postman
+
+A complete Postman collection is available for testing all API endpoints. Import the collection from:
+
+[Link]
+
+### Testing Instructions
+
+1. Import the collection into Postman
+2. Set up environment variables:
+   - `BASE_URL`: Application URL (local or deployed)
+   - `ACCESS_TOKEN`: Token retrieved after authentication
+
+3. Authentication Flow Testing:
+   - Use the "Google Login" request to initiate authentication
+   - After authentication, manually set the `ACCESS_TOKEN` environment variable with the token from the response
+
+4. Testing Other Endpoints:
+   - All endpoints requiring authentication will use the `ACCESS_TOKEN` variable
+   - Follow the sequence in the collection for proper testing
+
+## 🔒 Security Notes
+
+- This project uses session-based authentication
+- OAuth 2.0 tokens are stored securely in the session
+- Before making the repository public, ensure all sensitive information is removed:
+  - Remove any API keys or secrets from the code
+  - Move all sensitive data to environment variables
+  - Check for any hardcoded credentials
+
+
+

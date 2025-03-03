@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Google Drive Files</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding-top: 2rem;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .file-item {
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+            transition: background-color 0.2s;
+        }
+        .file-item:hover {
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="mb-4">
+            <h1 class="text-center">Your Google Drive Files</h1>
+        </header>
+        
+        <main>
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3>Files List</h3>
+                    <div>
+                        <a href="{% url 'pick_from_drive' %}" class="btn btn-primary">Google Picker</a>
+                        <a href="{% url 'chat_page' %}" class="btn btn-success">Go to Chat</a>
+                    </div>
+                </div>
+            </div>
+            
+            {% if files %}
+                <div class="list-group">
+                    {% for file in files %}
+                        <div class="file-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h5>{{ file.name }}</h5>
+                                    <small class="text-muted">{{ file.mimeType }}</small>
+                                </div>
+                                <div>
+                                    <a href="{% url 'download_file' file_id=file.id %}" class="btn btn-sm btn-outline-primary">Download</a>
+                                    {% if file.webViewLink %}
+                                        <a href="{{ file.webViewLink }}" target="_blank" class="btn btn-sm btn-outline-secondary">View in Drive</a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    No files found in your Google Drive or you haven't given access yet.
+                </div>
+            {% endif %}
+        </main>
+        
+        <footer class="mt-5 text-center text-muted">
+            <p>Backend Developer Assessment - Google API Integration</p>
+            <a href="{% url 'logout' %}" class="btn btn-sm btn-outline-danger">Logout</a>
+        </footer>
+    </div>
+</body>
+</html>

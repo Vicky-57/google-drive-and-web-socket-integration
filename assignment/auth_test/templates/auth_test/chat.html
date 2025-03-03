@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Chat</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding-top: 2rem;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .chat-container {
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 15px;
+            max-width: 75%;
+            word-wrap: break-word;
+        }
+        .user-message {
+            background-color: #007bff;
+            color: white;
+            margin-left: auto;
+            border-top-right-radius: 5px;
+        }
+        .other-message {
+            background-color: #e9ecef;
+            color: #212529;
+            margin-right: auto;
+            border-top-left-radius: 5px;
+        }
+        .message-form {
+            display: flex;
+        }
+        .message-input {
+            flex-grow: 1;
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+        .send-button {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="mb-4">
+            <h1 class="text-center">Real-Time Chat</h1>
+        </header>
+        
+        <main>
+            <div class="mb-3">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="username" class="form-label">Your Username</label>
+                            <input type="text" id="username" class="form-control" value="User1">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="room" class="form-label">Chat Room</label>
+                            <input type="text" id="room" class="form-control" value="assessment_room" readonly>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chat-container" id="chat-messages">
+                <div class="text-center text-muted mb-3">
+                    <p>Chat started. Say hello!</p>
+                </div>
+            </div>
+            
+            <form id="message-form" class="message-form">
+                <input type="text" id="message-input" class="form-control message-input" placeholder="Type your message..." required>
+                <button type="submit" class="btn btn-primary send-button">Send</button>
+            </form>
+            
+            <div class="mt-4 text-center">
+                <a href="/" class="btn btn-outline-primary">Back to Home</a>
+            </div>
+        </main>
+        
+        <footer class="mt-5 text-center text-muted">
+            <p>Backend Developer Assessment - Google API Integration</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const messageForm = document.getElementById('message-form');
+            const messageInput = document.getElementById('message-input');
+            const chatMessages = document.getElementById('chat-messages');
+            const username = document.getElementById('username');
+            const roomName = document.getElementById('room').value;
+            
+            // Create WebSocket connection
+            const chatSocket = new WebSocket(
+                'wss://' + window.location.host + '/ws/chat/' + roomName + '/'
+            );
+            
+            chatSocket.onopen = function(e) {
+                console.log('WebSocket connected successfully');
+                addSystemMessage('Connected to chat room!');
+            };
+            
+            chatSocket.onmessage = function(e) {
+                const data = JSON.parse(e.data);
+                addMessage(data.username, data.message, data.username === username.value);
+            };
+            
+            chatSocket.onclose = function(e) {
+                console.error('Chat socket closed unexpectedly');
+                addSystemMessage('Connection lost. Please refresh the page.');
+            };
+            
+            chatSocket.onerror = function(e) {
+                console.error('WebSocket error:', e);
+                addSystemMessage('Connection error. See console for details.');
+            };
+            
+            messageForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const message = messageInput.value.trim();
+                if (message) {
+                    chatSocket.send(JSON.stringify({
+                        'message': message,
+                        'username': username.value
+                    }));
+                    messageInput.value = '';
+                }
+            });
+            
+            function addMessage(username, message, isUser) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${isUser ? 'user-message' : 'other-message'}`;
+                
+                const userSpan = document.createElement('div');
+                userSpan.className = 'small fw-bold';
+                userSpan.textContent = username;
+                
+                const messageContent = document.createElement('div');
+                messageContent.textContent = message;
+                
+                messageDiv.appendChild(userSpan);
+                messageDiv.appendChild(messageContent);
+                
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+            
+            function addSystemMessage(message) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'text-center text-muted my-2';
+                messageDiv.textContent = message;
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        });
+    </script>
+</body>
+</html>

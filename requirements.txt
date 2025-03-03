@@ -1,0 +1,13 @@
+django 
+djangorestframework 
+channels 
+google-auth 
+google-auth-oauthlib 
+google-auth-httplib2 
+google-api-python-client
+channels
+social-auth-app-django 
+python-dotenv
+channels
+daphne
+

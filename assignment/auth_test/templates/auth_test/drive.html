@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block title %}Google Drive Integration{% endblock %}
+{% block header %}Google Drive Integration{% endblock %}
+
+{% block extra_head %}
+<style>
+    .file-list {
+        max-height: 400px;
+        overflow-y: auto;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        padding: 10px;
+    }
+    .file-item {
+        padding: 8px;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .file-item:last-child {
+        border-bottom: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h3>Welcome, {{ user_email }}!</h3>
+    <p>You are now connected to your Google Drive. Choose an option below:</p>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <button id="pickFiles" class="btn btn-primary w-100 mb-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-folder me-2" viewBox="0 0 16 16">
+                <path d="M.54 3.87.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3h3.982a2 2 0 0 1 1.992 2.181l-.637 7A2 2 0 0 1 13.174 14H2.826a2 2 0 0 1-1.991-1.819l-.637-7a1.99 1.99 0 0 1 .342-1.31zM2.19 4a1 1 0 0 0-.996 1.09l.637 7a1 1 0 0 0 .995.91h10.348a1 1 0 0 0 .995-.91l.637-7A1 1 0 0 0 13.81 4H2.19zm4.69-1.707A1 1 0 0 0 6.172 2H2.5a1 1 0 0 0-1 .981l.006.139C1.72 3.042 1.95 3 2.19 3h5.396l-.707-.707z"/>
+            </svg>
+            Browse My Drive
+        </button>
+    </div>
+    <div class="col-md-6">
+        <button id="listFiles" class="btn btn-outline-primary w-100 mb-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-list-ul me-2" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M5 11.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm-3 1a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm0 4a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm0 4a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+            </svg>
+            List My Files
+        </button>
+    </div>
+</div>
+
+<div id="fileList" class="file-list d-none">
+    <div class="text-center py-3" id="loading">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p>Loading your files...</p>
+    </div>
+    <div id="fileItems"></div>
+</div>
+
+<div id="pickedFiles" class="mt-4 d-none">
+    <h4>Selected Files</h4>
+    <div id="pickedFilesList"></div>
+</div>
+
+<!-- Hidden field to store the access token -->
+<input type="hidden" id="accessToken" value="{{ access_token }}">
+{% endblock %}
+
+{% block scripts %}
+<!-- Google API Client Library -->
+<script src="https://apis.google.com/js/api.js"></script>
+<script src="https://accounts.google.com/gsi/client"></script>
+
+<!-- Google Picker API -->
+<script>
+    // Store the access token from the server
+    const accessToken = document.getElementById('accessToken').value;
+    let pickerApiLoaded = false;
+    let gisInited = false;
+
+    // Load the Google API client and auth2 library
+    function loadGoogleAPIs() {
+        gapi.load('picker', onPickerApiLoad);
+    }
+
+    function onPickerApiLoad() {
+        pickerApiLoaded = true;
+        createPicker();
+    }
+
+    // Create and render a Picker for selecting files in Google Drive
+    function createPicker() {
+        if (pickerApiLoaded && accessToken) {
+            const picker = new google.picker.PickerBuilder()
+                .addView(google.picker.ViewId.DOCS)
+                .setOAuthToken(accessToken)
+                .setDeveloperKey('{{ developer_key }}')
+                .setCallback(pickerCallback)
+                .build();
+            picker.setVisible(true);
+        }
+    }
+
+    // A simple callback implementation for the Picker API
+    function pickerCallback(data) {
+        if (data.action == google.picker.Action.PICKED) {
+            const pickedFilesList = document.getElementById('pickedFilesList');
+            pickedFilesList.innerHTML = '';
+            
+            document.getElementById('pickedFiles').classList.remove('d-none');
+            
+            data.docs.forEach(doc => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.innerHTML = `
+                    <div>
+                        <strong>${doc.name}</strong>
+                        <span class="text-muted">(${formatFileSize(doc.sizeBytes)})</span>
+                    </div>
+                    <div>
+                        <a href="/download-file/?file_id=${doc.id}" class="btn btn-sm btn-success">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-download" viewBox="0 0 16 16">
+                                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                                <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                            </svg>
+                            Download
+                        </a>
+                    </div>
+                `;
+                pickedFilesList.appendChild(fileItem);
+            });
+        }
+    }
+
+    // Function to list files using the Drive API directly
+    function listDriveFiles() {
+        if (!accessToken) {
+            alert('Access token is missing. Please login again.');
+            return;
+        }
+
+        const fileList = document.getElementById('fileList');
+        const loading = document.getElementById('loading');
+        const fileItems = document.getElementById('fileItems');
+        
+        fileList.classList.remove('d-none');
+        loading.classList.remove('d-none');
+        fileItems.innerHTML = '';
+
+        fetch('https://www.googleapis.com/drive/v3/files?pageSize=30', {
+            headers: {
+                'Authorization': 'Bearer ' + accessToken
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to fetch files');
+            }
+            return response.json();
+        })
+        .then(data => {
+            loading.classList.add('d-none');
+            
+            if (data.files && data.files.length > 0) {
+                data.files.forEach(file => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'file-item';
+                    fileItem.innerHTML = `
+                        <div>
+                            <strong>${file.name}</strong>
+                            <small class="text-muted ms-2">${file.mimeType}</small>
+                        </div>
+                        <div>
+                            <a href="/download-file/?file_id=${file.id}" class="btn btn-sm btn-success">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-download" viewBox="0 0 16 16">
+                                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                                    <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                                </svg>
+                                Download
+                            </a>
+                        </div>
+                    `;
+                    fileItems.appendChild(fileItem);
+                });
+            } else {
+                fileItems.innerHTML = '<div class="text-center py-3">No files found in your Google Drive.</div>';
+            }
+        })
+        .catch(error => {
+            loading.classList.add('d-none');
+            fileItems.innerHTML = `<div class="text-center py-3 text-danger">Error: ${error.message}</div>`;
+            console.error('Error fetching drive files:', error);
+        });
+    }
+
+    // Format file size
+    function formatFileSize(bytes) {
+        if (!bytes) return 'Unknown size';
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+        if (bytes === 0) return '0 Byte';
+        const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+        return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
+    }
+
+    // Event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('pickFiles').addEventListener('click', function() {
+            loadGoogleAPIs();
+        });
+
+        document.getElementById('listFiles').addEventListener('click', function() {
+            listDriveFiles();
+        });
+    });
+</script>
+{% endblock %}
