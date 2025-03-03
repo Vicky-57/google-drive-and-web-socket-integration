@@ -46,8 +46,7 @@ This application implements the following features:
 
 1. Clone the repository
 ```bash
-git clone https://github.com/yourusername/your-repo-name.git
-cd your-repo-name
+git clone https://github.com/Vicky-57/google-drive-and-web-socket-integration.git
 ```
 
 2. Create and activate a virtual environment
@@ -70,7 +69,6 @@ GOOGLE_CLIENT_SECRET=your_google_client_secret
 GOOGLE_REDIRECT_URI= "http://localhost:8000/google/callback/" #for local host change it for production
 GOOGLE_API_KEY=your_google_api_key
 GOOGLE_APP_ID=your_google_app_id
-
 
 ```
 
